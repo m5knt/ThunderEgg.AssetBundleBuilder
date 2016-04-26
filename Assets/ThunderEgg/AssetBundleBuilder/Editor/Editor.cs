@@ -1,96 +1,132 @@
 using UnityEditor;
+using UnityEditor.Callbacks;
 using UnityEngine;
+using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace ThunderEgg.Editor {
+namespace ThunderEgg.AssetBundleBuilder {
 
-    using ABB = ThunderEgg.AssetBundleBuilder;
+    public class Editor : AssetPostprocessor {
 
-    public class AssetBundle {
+        //static Regex BandleNameRule = new Regex(@"/AB/(.+?)\.(.+?)/");
 
-        [MenuItem("Assets/[ThunderEgg]/Asset Bundle/Build", priority = 100)]
+        [PostProcessBuild(Int32.MaxValue)]
+        static void OnPostprocessAllAssets(string[] imported, string[] deleted, //
+            string[] to, string[] from) //
+        {
+            var set = Settings.Controler.Instance;
+            var rule = new Regex(set.BandleNameRule);
+            var assets = (new[] { imported, to }).SelectMany(_ => _);
+            foreach (var asset in assets) {
+                AutoNaming(rule, asset);
+            }
+        }
+
+        //
+        // Build
+        //
+
+        /// <summary>アセットバンドルを作成する</summary>
+        [MenuItem("Assets/[ThunderEgg]/AssetBundleBuilder/Build", priority = 100)]
         static void Build() {
+            //var obj = new GameObject();
+            //obj.name = "";
+            //obj.AddComponent<Hoge>();
+            //AssetDatabase.CreateAsset(obj, "Assets/aa.asset");
+            //AssetDatabase.SaveAssets();
+            //PrefabUtility.CreatePrefab("Assets/Resources/a.prefab", obj);
 
-            var opt = BuildAssetBundleOptions.None |
-                BuildAssetBundleOptions.DeterministicAssetBundle |
-                BuildAssetBundleOptions.ChunkBasedCompression;
+            var set = Settings.Controler.Instance;
 
+            //var opt = BuildAssetBundleOptions.None |
+            //    BuildAssetBundleOptions.DeterministicAssetBundle |
+            //    BuildAssetBundleOptions.ChunkBasedCompression;
+
+            var target = EditorUserBuildSettings.activeBuildTarget;
             var roots = new[] {
-                ABB.GetRoot(EditorUserBuildSettings.activeBuildTarget),
-                ABB.GetRoot(Application.platform),
+                AssetBundleBuilder.GetRoot(target),
+                AssetBundleBuilder.GetRoot(Application.platform),
                 }.Distinct();
 
             foreach (var root in roots) {
-                var target = ABB.RootToBuildTarget(roots.First());
-                var output = ABB.Output + "/" + root;
+                target = AssetBundleBuilder.RootToBuildTarget(roots.First());
+                var output = set.Output + "/" + root;
                 if (!Directory.Exists(output)) {
                     Directory.CreateDirectory(output);
                 }
-                BuildPipeline.BuildAssetBundles(output, opt, target);
+                BuildPipeline.BuildAssetBundles(output, set.BuildOption, target);
             }
         }
 
-        [MenuItem("Assets/[ThunderEgg]/Asset Bundle/Clean", priority = 101)]
+        /// <summary>アセットバンドルを削除する</summary>
+        [MenuItem("Assets/[ThunderEgg]/AssetBundleBuilder/Clean", priority = 101)]
         static void Clean() {
-            if (Directory.Exists(ABB.Output)) {
-                Directory.Delete(ABB.Output, true);
+            var set = Settings.Controler.Instance;
+            if (Directory.Exists(set.Output)) {
+                Directory.Delete(set.Output, true);
             }
         }
-    }
 
-    //
-    //
-    //
+        //     [MenuItem("Assets/[ThunderEgg]/AssetBundleBuilder/Settings", priority = 200)]
+        //       static void Settings() {
+        //        }
 
-    public class AssetBundleName {
+        //
+        // Naming
+        //
 
-        [MenuItem("Assets/[ThunderEgg]/Asset Bundle Name/Auto Naming", priority = 100)]
-        public static void AutoNaming() {
+        //[MenuItem("Assets/[ThunderEgg]/AssetBundleName/Auto Naming", priority = 100)]
+        //public static void AutoNaming() {
+        //    foreach (var asset in SelectedAssets()) {
+        //        AutoNaming(asset);
+        //    }
+        //}
+
+        //[MenuItem("Assets/[ThunderEgg]/AssetBundleName/Auto Naming", true)]
+        //public static bool AutoNaming_() {
+        //    return false;
+        //}
+
+        //[MenuItem("Assets/[ThunderEgg]/AssetBundleName/Clear", priority = 101)]
+        //public static void NameClear() {
+        //    foreach (var asset in SelectedAssets()) {
+        //        SetBundleNameAndVariant(asset, "");
+        //    }
+        //}
+
+        /// <summary>選択しているアセット</summary>
+        static IEnumerable<string> SelectedAssets() {
             var sels = Selection.assetGUIDs
                 .Select(_ => AssetDatabase.GUIDToAssetPath(_));
             var alls = AssetDatabase.GetAllAssetPaths();
-            var assets = sels.SelectMany(s => alls.Where(a => a.StartsWith(s)))
+            return sels.SelectMany(s => alls.Where(a => a.StartsWith(s)))
                 .Where(_ => File.Exists(_));
-            foreach (var asset in assets) {
-                Set(asset);
+        }
+
+        //
+        //
+        //
+
+        /// <summary>アセットバンドル名をパス名で決定します</summary>
+        public static void AutoNaming(Regex rule, string asset_path) {
+            if (!File.Exists(asset_path)) return;
+            var m = rule.Match(asset_path);
+            if (m.Success) {
+                var bundle = m.Groups[1].Success ? m.Groups[1].Value : "";
+                var variant = m.Groups[2].Success ? m.Groups[2].Value : "";
+                SetBundleNameAndVariant(asset_path, bundle, variant);
+            }
+            else {
+                SetBundleNameAndVariant(asset_path, "");
             }
         }
 
-        [MenuItem("Assets/[ThunderEgg]/Asset Bundle Name/Clear", priority = 101)]
-        public static void Clear() {
-            var sels = Selection.assetGUIDs
-                .Select(_ => AssetDatabase.GUIDToAssetPath(_));
-            var alls = AssetDatabase.GetAllAssetPaths();
-            var assets = sels.SelectMany(s => alls.Where(a => a.StartsWith(s)))
-                .Where(_ => File.Exists(_));
-            foreach (var asset in assets) {
-                Set(asset, "");
-            }
-        }
-
-        [MenuItem("Assets/[ThunderEgg]/Asset Bundle Name/Delete Unused", priority = 102)]
-        static void DeleteUnused() {
-            AssetDatabase.RemoveUnusedAssetBundleNames();
-        }
-
-        //
-        //
-        //
-
-        static Regex Name = new Regex(@"/(.+?)\.(.+?)/");
-
-        public static void Set(string asset_path) {
-            var m = Name.Match(asset_path);
-            if (!m.Success) return;
-            var bundle = m.Groups[1].Success ? m.Groups[1].Value : "";
-            var variant = m.Groups[2].Success ? m.Groups[2].Value : "";
-            Set(asset_path, bundle, variant);
-        }
-
-        public static void Set(string asset_path, string bundle, //
-            string variant = "") //
+        /// <summary>アセットバンドル名を設定します</summary>
+        public static void SetBundleNameAndVariant(string asset_path, //
+            string bundle, string variant = "") //
         {
             var importer = AssetImporter.GetAtPath(asset_path);
             var b = true;

@@ -4,10 +4,11 @@ using UnityEditor;
 #endif
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 
-namespace ThunderEgg {
+namespace ThunderEgg.AssetBundleBuilder {
 
-    public partial class AssetBundleBuilder {
+    public class AssetBundleBuilder {
 
         public static string Output = "AssetBundles";
         public static string Unknown = "Unknown";
@@ -21,7 +22,7 @@ namespace ThunderEgg {
             public string Root;
         };
 
-        static readonly RP2R[] RuntimePlatform2RootFolder = new[] {
+        static readonly RP2R[] RuntimePlatform2Root = new[] {
             // runtime platforms
             new RP2R(RuntimePlatform.WindowsEditor, "Windows"),
             new RP2R(RuntimePlatform.WindowsPlayer, "Windows"),
@@ -41,7 +42,7 @@ namespace ThunderEgg {
         };
 
         public static string GetRoot(RuntimePlatform target) {
-            var tbl = RuntimePlatform2RootFolder
+            var tbl = RuntimePlatform2Root
                 .FirstOrDefault(_ => _.Platform == target);
             return tbl.Root ?? "Unknown";
         }
@@ -57,7 +58,7 @@ namespace ThunderEgg {
             public string Root;
         };
 
-        static readonly BT2R[] BuildTarget2RootFolder = new[] {
+        static readonly BT2R[] BuildTarget2Root = new[] {
             // build targets
             new BT2R(BuildTarget.StandaloneWindows, "Windows"),
             new BT2R(BuildTarget.StandaloneWindows64, "Windows"),
@@ -78,7 +79,7 @@ namespace ThunderEgg {
         };
 
         public static string GetRoot(BuildTarget target) {
-            var tbl = BuildTarget2RootFolder
+            var tbl = BuildTarget2Root
                 .FirstOrDefault(_ => _.Target == target);
             return tbl.Root ?? Unknown;
         }
@@ -87,7 +88,7 @@ namespace ThunderEgg {
             if (root == Unknown) {
                 throw new InvalidProgramException("Unknown Platform");
             }
-            var tbl = BuildTarget2RootFolder
+            var tbl = BuildTarget2Root
                 .FirstOrDefault(_ => _.Root == root);
             return tbl.Target;
         }
