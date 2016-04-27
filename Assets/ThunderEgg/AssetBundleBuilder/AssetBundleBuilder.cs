@@ -10,8 +10,22 @@ namespace ThunderEgg.AssetBundleBuilder {
 
     public class AssetBundleBuilder {
 
-        public static string Output = "AssetBundles";
-        public static string Unknown = "Unknown";
+        /// <summary>ランタイムのアセットバンドルルートパス名を取得する</summary>
+        static string Root {
+            get {
+                return Root_ ?? (Root_ = GetRoot(Application.platform));
+            }
+        }
+
+        static string Root_;
+
+        /// <summary>RuntimePlatformからアセットバンドルルートパス名を取得する</summary>
+        /// <returns>アセットバンドルルートパス名 / 未定義の場合は Unknown を返す</returns>
+        public static string GetRoot(RuntimePlatform target) {
+            var tbl = RuntimePlatform2Root
+                .FirstOrDefault(_ => _.Platform == target);
+            return tbl.Root ?? "Unknown";
+        }
 
         struct RP2R {
             public RP2R(RuntimePlatform platform, string root) {
@@ -40,12 +54,6 @@ namespace ThunderEgg.AssetBundleBuilder {
             new RP2R(RuntimePlatform.XboxOne, "XboxOne"),
             new RP2R(RuntimePlatform.WiiU, "WiiU"),
         };
-
-        public static string GetRoot(RuntimePlatform target) {
-            var tbl = RuntimePlatform2Root
-                .FirstOrDefault(_ => _.Platform == target);
-            return tbl.Root ?? "Unknown";
-        }
 
 #if UNITY_EDITOR
 
@@ -78,16 +86,15 @@ namespace ThunderEgg.AssetBundleBuilder {
             new BT2R(BuildTarget.WiiU, "WiiU"),
         };
 
+        /// <summary>BuildTargetからアセットバンドルルートパス名を取得する</summary>
         public static string GetRoot(BuildTarget target) {
             var tbl = BuildTarget2Root
                 .FirstOrDefault(_ => _.Target == target);
-            return tbl.Root ?? Unknown;
+            return tbl.Root ?? "Unknown";
         }
 
+        /// <summary>アセットバンドルルートパス名からBuildTargetを取得する</summary>
         public static BuildTarget RootToBuildTarget(string root) {
-            if (root == Unknown) {
-                throw new InvalidProgramException("Unknown Platform");
-            }
             var tbl = BuildTarget2Root
                 .FirstOrDefault(_ => _.Root == root);
             return tbl.Target;

@@ -13,4 +13,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BandleNameRule: /AB/(.+?)\.(.+?)/
   Output: AssetBundles
-  BuildOptions: 000100000000000000000000
+  BuildOptions: 00010000000000000000000000000000
