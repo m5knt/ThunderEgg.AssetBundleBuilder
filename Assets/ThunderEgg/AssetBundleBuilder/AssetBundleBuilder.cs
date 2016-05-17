@@ -4,13 +4,12 @@ using UnityEditor;
 #endif
 using System;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace ThunderEgg.AssetBundleBuilder {
 
     public class AssetBundleBuilder {
 
-        /// <summary>ランタイムのアセットバンドルルートパス名を取得する</summary>
+        /// <summary>現在のランタイムのアセットバンドルのルート名を取得する</summary>
         static string Root {
             get {
                 return Root_ ?? (Root_ = GetRoot(Application.platform));
@@ -19,12 +18,15 @@ namespace ThunderEgg.AssetBundleBuilder {
 
         static string Root_;
 
-        /// <summary>RuntimePlatformからアセットバンドルルートパス名を取得する</summary>
-        /// <returns>アセットバンドルルートパス名 / 未定義の場合は Unknown を返す</returns>
+        /// <summary>RuntimePlatformからアセットバンドルのルート名を取得する</summary>
+        /// <returns>アセットバンドルのルート名</returns>
+        /// <exception cref="NotImplementedException">指定ターゲットが未実装だった</exception>
+        /// <see cref="https://bitbucket.org/Unity-Technologies/assetbundledemo/src/615fb55ed59820d8c0c34ef76deb504fe0b44322/demo/Assets/AssetBundleManager/Utility.cs?at=default&fileviewer=file-view-default#Utility.cs-54"/>
         public static string GetRoot(RuntimePlatform target) {
-            var tbl = RuntimePlatform2Root
+            var tbl = RuntimePlatform2BundleRoot
                 .FirstOrDefault(_ => _.Platform == target);
-            return tbl.Root ?? "Unknown";
+            if (tbl.Root == null) throw new NotImplementedException("" + target);
+            return tbl.Root;
         }
 
         struct RP2R {
@@ -36,7 +38,7 @@ namespace ThunderEgg.AssetBundleBuilder {
             public string Root;
         };
 
-        static readonly RP2R[] RuntimePlatform2Root = new[] {
+        static readonly RP2R[] RuntimePlatform2BundleRoot = new[] {
             // runtime platforms
             new RP2R(RuntimePlatform.WindowsEditor, "Windows"),
             new RP2R(RuntimePlatform.WindowsPlayer, "Windows"),
@@ -55,6 +57,10 @@ namespace ThunderEgg.AssetBundleBuilder {
             new RP2R(RuntimePlatform.WiiU, "WiiU"),
         };
 
+        //
+        //
+        //
+
 #if UNITY_EDITOR
 
         struct BT2R {
@@ -66,7 +72,7 @@ namespace ThunderEgg.AssetBundleBuilder {
             public string Root;
         };
 
-        static readonly BT2R[] BuildTarget2Root = new[] {
+        static readonly BT2R[] BuildTarget2BundleRoot = new[] {
             // build targets
             new BT2R(BuildTarget.StandaloneWindows, "Windows"),
             new BT2R(BuildTarget.StandaloneWindows64, "Windows"),
@@ -86,17 +92,22 @@ namespace ThunderEgg.AssetBundleBuilder {
             new BT2R(BuildTarget.WiiU, "WiiU"),
         };
 
-        /// <summary>BuildTargetからアセットバンドルルートパス名を取得する</summary>
+        /// <summary>BuildTargetからアセットバンドルのルート名を取得する</summary>
+        /// <returns>アセットバンドルのルート名</returns>
+        /// <exception cref="NotImplementedException">指定ターゲットが未実装だった</exception>
+        /// <see cref="https://bitbucket.org/Unity-Technologies/assetbundledemo/src/615fb55ed59820d8c0c34ef76deb504fe0b44322/demo/Assets/AssetBundleManager/Utility.cs?at=default&fileviewer=file-view-default#Utility.cs-22"/>
         public static string GetRoot(BuildTarget target) {
-            var tbl = BuildTarget2Root
+            var tbl = BuildTarget2BundleRoot
                 .FirstOrDefault(_ => _.Target == target);
-            return tbl.Root ?? "Unknown";
+            if (tbl.Root == null) throw new NotImplementedException("" + target);
+            return tbl.Root;
         }
 
-        /// <summary>アセットバンドルルートパス名からBuildTargetを取得する</summary>
+        /// <summary>アセットバンドルのルート名からBuildTargetを取得する</summary>
         public static BuildTarget RootToBuildTarget(string root) {
-            var tbl = BuildTarget2Root
+            var tbl = BuildTarget2BundleRoot
                 .FirstOrDefault(_ => _.Root == root);
+            if (tbl.Root == null) throw new NotImplementedException("" + root);
             return tbl.Target;
         }
 #endif

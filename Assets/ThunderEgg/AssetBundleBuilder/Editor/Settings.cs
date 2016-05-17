@@ -1,53 +1,46 @@
 using UnityEditor;
 using UnityEngine;
 using System.Linq;
+using System;
 
 namespace ThunderEgg.AssetBundleBuilder {
 
-    public class Settings : ScriptableObject {
+    public sealed class Settings {
 
-        public string BandleNameRule = @"/AB/(.+?)\.(.+?)/";
+        public string NameRule = @"/AB/([^\..]+?)\.([^\..]+?)/";
 
         public string Output = "AssetBundles";
 
         public BuildAssetBundleOptions[] BuildOptions = new[] {
             BuildAssetBundleOptions.ChunkBasedCompression,
-            BuildAssetBundleOptions.None};
+        };
+
+        //
+        //
+        //
+
+        BuildAssetBundleOptions? BuildOption_;
 
         public BuildAssetBundleOptions BuildOption {
             get {
-                return (BuildAssetBundleOptions)BuildOptions.Cast<int>().Sum();
+                return (BuildOption_ ??
+                    (BuildOption_ = (BuildAssetBundleOptions)BuildOptions.Cast<int>().Sum())).Value;
             }
         }
 
-        public class Controler {
+        public static readonly Settings Instance = new Settings(); // Create();
 
-            static string nn = "Assets/ThunderEgg/AssetBundleBuilderSettings.asset";
+        //static string SettingsAsset = "Assets/ThunderEgg/AssetBundleBuilderSettings.asset";
 
-            public static void Reset() {
-                var t = AssetDatabase.FindAssets("AssetBundleBuilderSettings");
-                var path = t.Length > 0 ? AssetDatabase.GUIDToAssetPath(t[0]) : nn;
-                var o = CreateInstance<Settings>();
-                AssetDatabase.CreateAsset(o, path);
-            }
-
-            static Settings Instance_;
-
-            public static Settings Instance {
-                get {
-                    if (Instance_ == null) {
-                        //var t = AssetDatabase.FindAssets("AssetBundleBuilderSettings");
-                        //var path = t.Length > 0 ? AssetDatabase.GUIDToAssetPath(t[0]) : nn;
-                        var o = AssetDatabase.LoadAssetAtPath<Settings>(nn);
-                        if (o == null) {
-                            o = CreateInstance<Settings>();
-                            AssetDatabase.CreateAsset(o, nn);
-                        }
-                        Instance_ = o;
-                    }
-                    return Instance_;
-                }
-            }
-        }
+        //static Settings Create() {
+        //    var t = AssetDatabase.FindAssets("AssetBundleBuilderSettings");
+        //    var path = t.Length > 0 ? AssetDatabase.GUIDToAssetPath(t[0]) : SettingsAsset;
+        //    var o = AssetDatabase.LoadAssetAtPath<Settings>(path);
+        //    if (o == null) {
+        //        o = CreateInstance<Settings>();
+        //        AssetDatabase.CreateAsset(o, SettingsAsset);
+        //    }
+        //    return o;
+        //}
     }
 }
