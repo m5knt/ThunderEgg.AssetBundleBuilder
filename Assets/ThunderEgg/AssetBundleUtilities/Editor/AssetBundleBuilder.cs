@@ -1,11 +1,7 @@
 ﻿using UnityEditor;
-using UnityEditor.Callbacks;
 using UnityEngine;
-using System;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace ThunderEgg.AssetBundleUtilities {
 

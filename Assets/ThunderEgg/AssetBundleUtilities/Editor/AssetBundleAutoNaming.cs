@@ -1,10 +1,6 @@
 ﻿using UnityEditor;
-using UnityEditor.Callbacks;
-using UnityEngine;
-using System;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace ThunderEgg.AssetBundleUtilities {
@@ -12,8 +8,9 @@ namespace ThunderEgg.AssetBundleUtilities {
     public class AssetBundleAutoNaming : AssetPostprocessor {
 
         //[PostProcessBuild(Int32.MaxValue)]
-        static void OnPostprocessAllAssets(string[] imported,
-            string[] deleted, string[] to, string[] from) {
+        static void OnPostprocessAllAssets(string[] imported, string[] deleted, 
+            string[] to, string[] from) //
+        {
             var set = AssetBundleSettings.Instance;
             var rule = new Regex(set.NameRule);
             var assets = (new[] { imported, to }).SelectMany(_ => _);
