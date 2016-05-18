@@ -5,9 +5,9 @@ using UnityEditor;
 using System;
 using System.Linq;
 
-namespace ThunderEgg.AssetBundleBuilder {
+namespace ThunderEgg.AssetBundleUtilities {
 
-    public class AssetBundleBuilder {
+    public class AssetBundleUtilities {
 
         /// <summary>現在のランタイムのアセットバンドルのルート名を取得する</summary>
         static string Root {
