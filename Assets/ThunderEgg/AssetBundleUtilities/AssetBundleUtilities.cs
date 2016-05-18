@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -9,7 +9,7 @@ namespace ThunderEgg.AssetBundleUtilities {
 
     public class AssetBundleUtilities {
 
-        /// <summary>Œ»İ‚Ìƒ‰ƒ“ƒ^ƒCƒ€‚ÌƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚Ìƒ‹[ƒg–¼‚ğæ“¾‚·‚é</summary>
+        /// <summary>ç¾åœ¨ã®ãƒ©ãƒ³ã‚¿ã‚¤ãƒ ã®ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã®ãƒ«ãƒ¼ãƒˆåã‚’å–å¾—ã™ã‚‹</summary>
         static string Root {
             get {
                 return Root_ ?? (Root_ = GetRoot(Application.platform));
@@ -18,9 +18,9 @@ namespace ThunderEgg.AssetBundleUtilities {
 
         static string Root_;
 
-        /// <summary>RuntimePlatform‚©‚çƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚Ìƒ‹[ƒg–¼‚ğæ“¾‚·‚é</summary>
-        /// <returns>ƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚Ìƒ‹[ƒg–¼</returns>
-        /// <exception cref="NotImplementedException">w’èƒ^[ƒQƒbƒg‚ª–¢À‘•‚¾‚Á‚½</exception>
+        /// <summary>RuntimePlatformã‹ã‚‰ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã®ãƒ«ãƒ¼ãƒˆåã‚’å–å¾—ã™ã‚‹</summary>
+        /// <returns>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã®ãƒ«ãƒ¼ãƒˆå</returns>
+        /// <exception cref="NotImplementedException">æŒ‡å®šã‚¿ãƒ¼ã‚²ãƒƒãƒˆãŒæœªå®Ÿè£…ã ã£ãŸ</exception>
         /// <see cref="https://bitbucket.org/Unity-Technologies/assetbundledemo/src/615fb55ed59820d8c0c34ef76deb504fe0b44322/demo/Assets/AssetBundleManager/Utility.cs?at=default&fileviewer=file-view-default#Utility.cs-54"/>
         public static string GetRoot(RuntimePlatform target) {
             var tbl = RuntimePlatform2BundleRoot
@@ -57,9 +57,19 @@ namespace ThunderEgg.AssetBundleUtilities {
             new RP2R(RuntimePlatform.WiiU, "WiiU"),
         };
 
-        //
-        //
-        //
+        public static T CreateScriptableObject<T>(string folder) //
+            where T : ScriptableObject //
+        {
+            var t = typeof(T);
+            var path = folder + t.Name + ".asset";
+            var o = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (o == null) {
+                o = ScriptableObject.CreateInstance<T>();
+                AssetDatabase.CreateAsset(o, path);
+                AssetDatabase.SaveAssets();
+            }
+            return o;
+        }
 
 #if UNITY_EDITOR
 
@@ -92,9 +102,9 @@ namespace ThunderEgg.AssetBundleUtilities {
             new BT2R(BuildTarget.WiiU, "WiiU"),
         };
 
-        /// <summary>BuildTarget‚©‚çƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚Ìƒ‹[ƒg–¼‚ğæ“¾‚·‚é</summary>
-        /// <returns>ƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚Ìƒ‹[ƒg–¼</returns>
-        /// <exception cref="NotImplementedException">w’èƒ^[ƒQƒbƒg‚ª–¢À‘•‚¾‚Á‚½</exception>
+        /// <summary>BuildTargetã‹ã‚‰ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã®ãƒ«ãƒ¼ãƒˆåã‚’å–å¾—ã™ã‚‹</summary>
+        /// <returns>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã®ãƒ«ãƒ¼ãƒˆå</returns>
+        /// <exception cref="NotImplementedException">æŒ‡å®šã‚¿ãƒ¼ã‚²ãƒƒãƒˆãŒæœªå®Ÿè£…ã ã£ãŸ</exception>
         /// <see cref="https://bitbucket.org/Unity-Technologies/assetbundledemo/src/615fb55ed59820d8c0c34ef76deb504fe0b44322/demo/Assets/AssetBundleManager/Utility.cs?at=default&fileviewer=file-view-default#Utility.cs-22"/>
         public static string GetRoot(BuildTarget target) {
             var tbl = BuildTarget2BundleRoot
@@ -103,13 +113,14 @@ namespace ThunderEgg.AssetBundleUtilities {
             return tbl.Root;
         }
 
-        /// <summary>ƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚Ìƒ‹[ƒg–¼‚©‚çBuildTarget‚ğæ“¾‚·‚é</summary>
+        /// <summary>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã®ãƒ«ãƒ¼ãƒˆåã‹ã‚‰BuildTargetã‚’å–å¾—ã™ã‚‹</summary>
         public static BuildTarget RootToBuildTarget(string root) {
             var tbl = BuildTarget2BundleRoot
                 .FirstOrDefault(_ => _.Root == root);
             if (tbl.Root == null) throw new NotImplementedException("" + root);
             return tbl.Target;
         }
+
 #endif
     }
 }

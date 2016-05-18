@@ -1,4 +1,4 @@
-using UnityEditor;
+ï»¿using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
 using System;
@@ -11,7 +11,7 @@ namespace ThunderEgg.AssetBundleUtilities {
 
     public class AssetBundleBuilder {
 
-        /// <summary>ƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚ğì¬‚·‚é</summary>
+        /// <summary>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã‚’ä½œæˆã™ã‚‹</summary>
         [MenuItem("Assets/[ThunderEgg]/AssetBundleBuilder/Build", priority = 100)]
         static void Build() {
 
@@ -33,7 +33,7 @@ namespace ThunderEgg.AssetBundleUtilities {
             }
         }
 
-        /// <summary>ƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚ğíœ‚·‚é</summary>
+        /// <summary>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã‚’å‰Šé™¤ã™ã‚‹</summary>
         [MenuItem("Assets/[ThunderEgg]/AssetBundleBuilder/Clean", priority = 101)]
         static void Clean() {
             var set = AssetBundleSettings.Instance;

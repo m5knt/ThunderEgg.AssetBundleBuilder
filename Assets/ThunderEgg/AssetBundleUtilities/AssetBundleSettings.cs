@@ -1,56 +1,47 @@
-using UnityEditor;
+ï»¿using UnityEditor;
 using UnityEngine;
-using System;
 using System.Linq;
 
-namespace ThunderEgg.AssetBundleUtilities {
+namespace ThunderEgg.AssetBundleUtilities  {
 
     public class AssetBundleSettings : ScriptableObject {
 
-        /// <summary>ƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚Ì©“®–½–¼‹K‘¥</summary>
+        /// <summary>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã®è‡ªå‹•å‘½åè¦å‰‡</summary>
         public string NameRule = @"/AB/([^\..]+?)\.([^\..]+?)/";
 
-        /// <summary>ƒAƒZƒbƒgƒoƒ“ƒhƒ‹o—ÍˆÊ’u</summary>
+        /// <summary>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«å‡ºåŠ›ä½ç½®</summary>
         public string Output = "AssetBundles";
 
-        /// <summary>ƒAƒZƒbƒgƒoƒ“ƒhƒ‹ì¬‚ÌƒIƒvƒVƒ‡ƒ“</summary>
-        public BuildAssetBundleOptions[] BuildOptions = new[] {
+        /// <summary>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ä½œæˆæ™‚ã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³</summary>
+        [SerializeField]
+        BuildAssetBundleOptions[] BuildOptions = new[] {
             BuildAssetBundleOptions.ChunkBasedCompression,
         };
 
-        //
-        //
-        //
-
-        BuildAssetBundleOptions? BuildOption_;
-
+        /// <summary>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ä½œæˆæ™‚ã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³</summary>
         public BuildAssetBundleOptions BuildOption {
             get {
-                return (BuildOption_ ??
-                    (BuildOption_ = (BuildAssetBundleOptions)BuildOptions.Cast<int>().Sum())).Value;
+                return (BuildOption_ ?? (BuildOption_ =
+                    (BuildAssetBundleOptions)BuildOptions.Cast<int>().Sum())).Value;
             }
         }
 
+        BuildAssetBundleOptions? BuildOption_;
+
+        //
+        //
+        //
+
         public static AssetBundleSettings Instance {
-            get {
-                return Instance_ ?? (Instance_ = Create());
+            get { 
+                return Instance_ ?? (Instance_ =
+                    AssetBundleUtilities.CreateScriptableObject<AssetBundleSettings>(Base));
             }
         }
 
         static AssetBundleSettings Instance_;
 
-        static string SettingsAsset = "Assets/ThunderEgg/AssetBundleUtilities/AssetBundleSettings.asset";
+        static string Base = "Assets/ThunderEgg/AssetBundleUtilities/";
 
-        static AssetBundleSettings Create() {
-            // var t = AssetDatabase.FindAssets("Settings");
-            // var path = (t.Length > 0) ? AssetDatabase.GUIDToAssetPath(t[0]) : SettingsAsset;
-            var path = SettingsAsset;
-            var o = AssetDatabase.LoadAssetAtPath<AssetBundleSettings>(path);
-            if (o == null) {
-                o = CreateInstance<AssetBundleSettings>();
-                AssetDatabase.CreateAsset(o, SettingsAsset);
-            }
-            return o;
-        }
     }
 }

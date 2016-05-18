@@ -1,4 +1,4 @@
-using UnityEditor;
+ï»¿using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
 using System;
@@ -22,7 +22,7 @@ namespace ThunderEgg.AssetBundleUtilities {
             }
         }
         
-        /// <summary>ƒAƒZƒbƒgƒoƒ“ƒhƒ‹–¼‚ğƒpƒX–¼‚©‚çŒˆ’è‚µ‚Ü‚·</summary>
+        /// <summary>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«åã‚’ãƒ‘ã‚¹åã‹ã‚‰æ±ºå®šã—ã¾ã™</summary>
         public static void AutoNaming(Regex rule, string asset_path) {
             if (!File.Exists(asset_path)) return;
             var m = rule.Match(asset_path);
@@ -36,7 +36,7 @@ namespace ThunderEgg.AssetBundleUtilities {
             }
         }
 
-        /// <summary>ƒAƒZƒbƒgƒoƒ“ƒhƒ‹–¼‚ğİ’è‚µ‚Ü‚·</summary>
+        /// <summary>ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«åã‚’è¨­å®šã—ã¾ã™</summary>
         public static void SetBundleNameAndVariant(string asset_path, //
             string bundle, string variant = "") //
         {
