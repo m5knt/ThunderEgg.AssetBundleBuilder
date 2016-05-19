@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ThunderEgg.AssetBundleUtilities  {
 
-    public class AssetBundleSettings : ScriptableObject {
+    public sealed class Settings : ScriptableObject {
 
         /// <summary>アセットバンドルの自動命名規則</summary>
         public string NameRule = @"/AB/([^\..]+?)\.([^\..]+?)/";
@@ -32,14 +32,14 @@ namespace ThunderEgg.AssetBundleUtilities  {
         //
         //
 
-        public static AssetBundleSettings Instance {
+        public static Settings Instance {
             get { 
                 return Instance_ ?? (Instance_ =
-                    AssetBundleUtilities.CreateScriptableObject<AssetBundleSettings>(Base));
+                    Utilities.CreateScriptableObject<Settings>(Base));
             }
         }
 
-        static AssetBundleSettings Instance_;
+        static Settings Instance_;
 
         static string Base = "Assets/ThunderEgg/AssetBundleUtilities/";
 

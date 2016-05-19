@@ -5,22 +5,22 @@ using System.Text.RegularExpressions;
 
 namespace ThunderEgg.AssetBundleUtilities {
 
-    public class AssetBundleAutoNaming : AssetPostprocessor {
+    public class AutoNaming : AssetPostprocessor {
 
         //[PostProcessBuild(Int32.MaxValue)]
         static void OnPostprocessAllAssets(string[] imported, string[] deleted, 
             string[] to, string[] from) //
         {
-            var set = AssetBundleSettings.Instance;
+            var set = Settings.Instance;
             var rule = new Regex(set.NameRule);
             var assets = (new[] { imported, to }).SelectMany(_ => _);
             foreach (var asset in assets) {
-                AutoNaming(rule, asset);
+                Set(rule, asset);
             }
         }
         
         /// <summary>アセットバンドル名をパス名から決定します</summary>
-        public static void AutoNaming(Regex rule, string asset_path) {
+        public static void Set(Regex rule, string asset_path) {
             if (!File.Exists(asset_path)) return;
             var m = rule.Match(asset_path);
             if (m.Success) {

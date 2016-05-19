@@ -5,22 +5,22 @@ using System.Linq;
 
 namespace ThunderEgg.AssetBundleUtilities {
 
-    public class AssetBundleBuilder {
+    public class Builder {
 
         /// <summary>アセットバンドルを作成する</summary>
         [MenuItem("Assets/[ThunderEgg]/AssetBundleBuilder/Build", priority = 100)]
         static void Build() {
 
-            var set = AssetBundleSettings.Instance;
+            var set = Settings.Instance;
 
             var target = EditorUserBuildSettings.activeBuildTarget;
             var roots = new[] {
-                AssetBundleUtilities.GetRoot(target),
-                AssetBundleUtilities.GetRoot(Application.platform),
+                Utilities.GetRoot(target),
+                Utilities.GetRoot(Application.platform),
                 }.Distinct();
 
             foreach (var root in roots) {
-                target = AssetBundleUtilities.RootToBuildTarget(roots.First());
+                target = Utilities.RootToBuildTarget(roots.First());
                 var output = set.Output + "/" + root;
                 if (!Directory.Exists(output)) {
                     Directory.CreateDirectory(output);
@@ -32,7 +32,7 @@ namespace ThunderEgg.AssetBundleUtilities {
         /// <summary>アセットバンドルを削除する</summary>
         [MenuItem("Assets/[ThunderEgg]/AssetBundleBuilder/Clean", priority = 101)]
         static void Clean() {
-            var set = AssetBundleSettings.Instance;
+            var set = Settings.Instance;
             if (Directory.Exists(set.Output)) {
                 Directory.Delete(set.Output, true);
             }

@@ -3,11 +3,12 @@
 using UnityEditor;
 #endif
 using System;
+using System.IO;
 using System.Linq;
 
 namespace ThunderEgg.AssetBundleUtilities {
 
-    public class AssetBundleUtilities {
+    public class Utilities {
 
         /// <summary>現在のランタイムのアセットバンドルのルート名を取得する</summary>
         static string Root {
@@ -65,8 +66,10 @@ namespace ThunderEgg.AssetBundleUtilities {
             var o = AssetDatabase.LoadAssetAtPath<T>(path);
             if (o == null) {
                 o = ScriptableObject.CreateInstance<T>();
-                AssetDatabase.CreateAsset(o, path);
-                AssetDatabase.SaveAssets();
+                if (!File.Exists(path)) {
+                    AssetDatabase.CreateAsset(o, path);
+                    AssetDatabase.SaveAssets();
+                }
             }
             return o;
         }
