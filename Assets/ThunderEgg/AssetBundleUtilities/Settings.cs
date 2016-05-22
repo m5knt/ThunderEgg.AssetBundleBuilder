@@ -12,6 +12,9 @@ namespace ThunderEgg.AssetBundleUtilities  {
         /// <summary>アセットバンドル出力位置</summary>
         public string Output = "AssetBundles";
 
+        /// <summary>テストサーバのポート</summary>
+        public int TestServerPort = 7888;
+
         /// <summary>アセットバンドル作成時のオプション</summary>
         [SerializeField]
         BuildAssetBundleOptions[] BuildOptions = new[] {

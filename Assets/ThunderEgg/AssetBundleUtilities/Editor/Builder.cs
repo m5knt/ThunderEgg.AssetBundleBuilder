@@ -8,8 +8,8 @@ namespace ThunderEgg.AssetBundleUtilities {
     public class Builder {
 
         /// <summary>アセットバンドルを作成する</summary>
-        [MenuItem("Assets/[ThunderEgg]/AssetBundleBuilder/Build", priority = 100)]
-        static void Build() {
+        [MenuItem("Assets/[ThunderEgg]/Builder/Build", priority = 100)]
+        public static void Build() {
 
             var set = Settings.Instance;
 
@@ -30,8 +30,8 @@ namespace ThunderEgg.AssetBundleUtilities {
         }
 
         /// <summary>アセットバンドルを削除する</summary>
-        [MenuItem("Assets/[ThunderEgg]/AssetBundleBuilder/Clean", priority = 101)]
-        static void Clean() {
+        [MenuItem("Assets/[ThunderEgg]/Builder/Clean", priority = 101)]
+        public static void Clean() {
             var set = Settings.Instance;
             if (Directory.Exists(set.Output)) {
                 Directory.Delete(set.Output, true);

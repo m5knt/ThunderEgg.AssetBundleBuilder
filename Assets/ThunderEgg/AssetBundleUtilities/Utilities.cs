@@ -11,7 +11,7 @@ namespace ThunderEgg.AssetBundleUtilities {
     public class Utilities {
 
         /// <summary>現在のランタイムのアセットバンドルのルート名を取得する</summary>
-        static string Root {
+        public static string Root {
             get {
                 return Root_ ?? (Root_ = GetRoot(Application.platform));
             }
