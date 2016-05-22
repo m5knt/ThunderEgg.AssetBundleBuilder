@@ -10,6 +10,16 @@ namespace ThunderEgg.AssetBundleUtilities {
 
     public class Utilities {
 
+        public static bool IsBatchMode {
+            get {
+                return (IsBatchMode_ ?? (IsBatchMode_ =
+                    Environment.GetCommandLineArgs()
+                    .Any(n => n.StartsWith("-batchmode")))).Value;
+            }
+        }
+
+        static bool? IsBatchMode_;
+
         /// <summary>現在のランタイムのアセットバンドルのルート名を取得する</summary>
         public static string Root {
             get {

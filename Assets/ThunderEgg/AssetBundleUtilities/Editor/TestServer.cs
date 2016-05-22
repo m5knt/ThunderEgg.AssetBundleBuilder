@@ -11,6 +11,25 @@ namespace ThunderEgg.AssetBundleUtilities {
 
     public class TestServer {
 
+        public class Control {
+
+            TestServer TestServer;
+
+            public void Set(bool start) {
+                if (!start || TestServer != null) {
+                    if (TestServer != null) TestServer.Stop();
+                    TestServer = null;
+                }
+
+                if (start) {
+                    var set = Settings.Instance;
+                    var path = set.Output + "/" + Utilities.Root;
+                    TestServer = new TestServer(path, "*", set.TestServerPort);
+                    TestServer.Start();
+                }
+            }
+        }
+
         const int ResponseBufferSize = 128 * 1024;
 
         string ContentsPath;
@@ -41,7 +60,7 @@ namespace ThunderEgg.AssetBundleUtilities {
 
         /// <summary>サービス開始</summary>
         public void Start() {
-            Debug.Log(string.Format("TestServer Start {0} {1}", ContentsPath, ServerBaseUri));
+//            Debug.Log(string.Format("TestServer Start {0} {1}", ContentsPath, ServerBaseUri));
             HttpListener = new HttpListener();
             HttpListener.Prefixes.Add(ServerBaseUri);
             HttpListener.Start();
@@ -51,7 +70,7 @@ namespace ThunderEgg.AssetBundleUtilities {
         /// <summary>サービス停止</summary>
         public void Stop() {
             if (HttpListener == null) return;
-            Debug.Log("TestServer Stop");
+//            Debug.Log("TestServer Stop");
             HttpListener.Stop();
             HttpListener = null;
         }
@@ -64,7 +83,7 @@ namespace ThunderEgg.AssetBundleUtilities {
             listener.BeginGetContext(CallBack, listener);
             // レスポンス返却を試みる
             var path = ContentsPath + ctx.Request.RawUrl;
-            Debug.Log("TestServer Request " + path);
+//            Debug.Log("TestServer Request " + path);
             using (var res = ctx.Response) {
                 Responser(res, path);
             }
