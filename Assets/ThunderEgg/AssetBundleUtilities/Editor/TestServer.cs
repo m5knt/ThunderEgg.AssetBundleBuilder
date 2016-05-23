@@ -1,7 +1,9 @@
 ﻿using System.IO;
 using System;
+using System.Threading;
 using System.Net;
 using System.Net.Mime;
+using UnityEngine;
 
 namespace ThunderEgg.AssetBundleUtilities {
 
@@ -19,19 +21,21 @@ namespace ThunderEgg.AssetBundleUtilities {
 
                 if (start) {
                     var set = Settings.Instance;
-                    var path = set.Output + "/" + Utilities.Root;
+                    var path = set.Output;
                     TestServer = new TestServer(path, "*", set.TestServerPort);
                     TestServer.Start();
                 }
             }
         }
 
-        const int ResponseBufferSize = 64 * 1024;
+        public int MaxConnection = 20;
+        static int ResponseBufferSize = 64 * 1024;
 
-        string ContentsPath;
-        string ServerBaseUri;
+        public string ContentsPath { get; private set; }
+        public string ServerBaseUri { get; private set; }
 
         HttpListener HttpListener;
+        int Connection_;
 
         /// <summary>テストサーバー</summary>
         /// <param name="contents_path">公開コンテンツのパス</param>
@@ -56,10 +60,16 @@ namespace ThunderEgg.AssetBundleUtilities {
         /// <summary>サービス開始</summary>
         public void Start() {
             //            Debug.Log(string.Format("TestServer Start {0} {1}", ContentsPath, ServerBaseUri));
+            if (HttpListener != null) {
+                Stop();
+            }
+            Connection_ = 0;
             HttpListener = new HttpListener();
             HttpListener.Prefixes.Add(ServerBaseUri);
             HttpListener.Start();
-            HttpListener.BeginGetContext(CallBack, HttpListener);
+            for (var i = 0; i < MaxConnection; ++i) {
+                HttpListener.BeginGetContext(CallBack, HttpListener);
+            }
         }
 
         /// <summary>サービス停止</summary>
@@ -67,34 +77,65 @@ namespace ThunderEgg.AssetBundleUtilities {
             if (HttpListener == null) return;
             //            Debug.Log("TestServer Stop");
             HttpListener.Stop();
-            HttpListener = null;
+            while (Interlocked.Decrement(ref Connection_) >= 0) {
+                Interlocked.Increment(ref Connection_);
+                Thread.Sleep(1);
+            }
+            using (var t = HttpListener) { HttpListener = null; }
+            Connection_ = 0;
         }
 
         /// <summary>非同期コールバック処理</summary>
         public void CallBack(IAsyncResult result) {
-            // コンテクストの取得を試みる
-            var listener = (HttpListener)result.AsyncState;
-            var ctx = listener.EndGetContext(result);
-            listener.BeginGetContext(CallBack, listener);
 
-            // レスポンス返却を試みる
-            var path = ContentsPath + ctx.Request.RawUrl;
-            //            Debug.Log("TestServer Request " + path);
-            using (var res = ctx.Response) {
-                try {
-                    if (!File.Exists(path)) {
-                        res.StatusCode = (int)HttpStatusCode.NotFound;
-                        return;
-                    }
-                    Responser(res, path);
-                }
-                catch (Exception e) {
-                    res.Abort();
-                    throw e;
-                }
-                finally {
+            Interlocked.Increment(ref Connection_);
+
+            var listener = (HttpListener)result.AsyncState;
+            HttpListenerResponse res = null;
+
+            try {
+                // コンテクストの取得を試みる
+                var ctx = listener.EndGetContext(result);
+                var req = ctx.Request;
+                var path = ContentsPath + req.RawUrl;
+
+                // メソッド確認
+                res = ctx.Response;
+                if (string.Compare(req.HttpMethod, "GET", true) != 0) {
+                    res.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
                     res.Close();
+                    res = null;
                 }
+
+                // ファイル確認
+                if (!File.Exists(path)) {
+                    // ファイルが見つからなかった
+                    res.StatusCode = (int)HttpStatusCode.NotFound;
+                    res.Close();
+                    res = null;
+                }
+
+                // ファイル送信を試みる
+                res.StatusCode = (int)HttpStatusCode.OK;
+                Responser(res, path);
+                res.Close();
+                res = null;
+            }
+            catch (Exception e) {
+                // 停止要求例外なら続けないようにする
+                if (e is HttpListenerException || e is ThreadAbortException) {
+                    listener = null;
+                } else {
+                    if (res != null) {
+                        res.Abort();
+                    }
+                }
+            }
+            finally {
+                if (listener != null) {
+                    listener.BeginGetContext(CallBack, listener);
+                }
+                Interlocked.Decrement(ref Connection_);
             }
         }
 
@@ -108,7 +149,6 @@ namespace ThunderEgg.AssetBundleUtilities {
                 res.AddHeader("Content-disposition", "attachment; filename=" + fname);
                 CopyTo(from, res.OutputStream);
                 // from.CopyTo(res.OutputStream);
-                res.StatusCode = (int)HttpStatusCode.OK;
                 from.Close();
             }
         }
@@ -116,11 +156,13 @@ namespace ThunderEgg.AssetBundleUtilities {
         /// <summary>ストリームのコピー</summary>
         static void CopyTo(Stream from, Stream to) {
             var buffer = new byte[ResponseBufferSize];
+            var total = 0;
             int count;
             using (var wr = new BinaryWriter(to)) {
                 while ((count = from.Read(buffer, 0, buffer.Length)) > 0) {
                     wr.Write(buffer, 0, count);
                     wr.Flush();
+                    total += count;
                 }
                 wr.Close();
             }
