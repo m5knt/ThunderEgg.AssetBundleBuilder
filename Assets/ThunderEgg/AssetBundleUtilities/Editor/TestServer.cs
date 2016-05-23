@@ -123,7 +123,9 @@ namespace ThunderEgg.AssetBundleUtilities {
             }
             catch (Exception e) {
                 // 停止要求例外なら続けないようにする
-                if (e is HttpListenerException || e is ThreadAbortException) {
+                if (e is HttpListenerException || e is ThreadAbortException ||
+                    e is ObjectDisposedException) //
+                {
                     listener = null;
                 } else {
                     if (res != null) {
