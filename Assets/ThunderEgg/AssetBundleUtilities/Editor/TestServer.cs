@@ -1,11 +1,7 @@
-﻿using UnityEditor;
-using UnityEngine;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System;
 using System.Net;
 using System.Net.Mime;
-using System.Threading;
 
 namespace ThunderEgg.AssetBundleUtilities {
 
@@ -30,13 +26,12 @@ namespace ThunderEgg.AssetBundleUtilities {
             }
         }
 
-        const int ResponseBufferSize = 128 * 1024;
+        const int ResponseBufferSize = 64 * 1024;
 
         string ContentsPath;
         string ServerBaseUri;
 
         HttpListener HttpListener;
-        byte[] ResponseBuffer = new byte[ResponseBufferSize];
 
         /// <summary>テストサーバー</summary>
         /// <param name="contents_path">公開コンテンツのパス</param>
@@ -60,7 +55,7 @@ namespace ThunderEgg.AssetBundleUtilities {
 
         /// <summary>サービス開始</summary>
         public void Start() {
-//            Debug.Log(string.Format("TestServer Start {0} {1}", ContentsPath, ServerBaseUri));
+            //            Debug.Log(string.Format("TestServer Start {0} {1}", ContentsPath, ServerBaseUri));
             HttpListener = new HttpListener();
             HttpListener.Prefixes.Add(ServerBaseUri);
             HttpListener.Start();
@@ -70,7 +65,7 @@ namespace ThunderEgg.AssetBundleUtilities {
         /// <summary>サービス停止</summary>
         public void Stop() {
             if (HttpListener == null) return;
-//            Debug.Log("TestServer Stop");
+            //            Debug.Log("TestServer Stop");
             HttpListener.Stop();
             HttpListener = null;
         }
@@ -81,28 +76,53 @@ namespace ThunderEgg.AssetBundleUtilities {
             var listener = (HttpListener)result.AsyncState;
             var ctx = listener.EndGetContext(result);
             listener.BeginGetContext(CallBack, listener);
+
             // レスポンス返却を試みる
             var path = ContentsPath + ctx.Request.RawUrl;
-//            Debug.Log("TestServer Request " + path);
+            //            Debug.Log("TestServer Request " + path);
             using (var res = ctx.Response) {
-                Responser(res, path);
+                try {
+                    if (!File.Exists(path)) {
+                        res.StatusCode = (int)HttpStatusCode.NotFound;
+                        return;
+                    }
+                    Responser(res, path);
+                }
+                catch (Exception e) {
+                    res.Abort();
+                    throw e;
+                }
+                finally {
+                    res.Close();
+                }
             }
         }
 
         /// <summary>レスポンス返却</summary>
         void Responser(HttpListenerResponse res, string path) {
-            using (var @in = File.OpenRead(path)) {
+            using (var from = File.OpenRead(path)) {
                 var fname = Path.GetFileName(path);
-                res.ContentLength64 = @in.Length;
+                res.ContentLength64 = from.Length;
                 res.SendChunked = false;
                 res.ContentType = MediaTypeNames.Application.Octet;
                 res.AddHeader("Content-disposition", "attachment; filename=" + fname);
-                int read;
-                using (var @out = new BinaryWriter(res.OutputStream)) {
-                    while ((read = @in.Read(ResponseBuffer, 0, ResponseBuffer.Length)) > 0) {
-                        @out.Write(ResponseBuffer, 0, read);
-                    }
+                CopyTo(from, res.OutputStream);
+                // from.CopyTo(res.OutputStream);
+                res.StatusCode = (int)HttpStatusCode.OK;
+                from.Close();
+            }
+        }
+
+        /// <summary>ストリームのコピー</summary>
+        static void CopyTo(Stream from, Stream to) {
+            var buffer = new byte[ResponseBufferSize];
+            int count;
+            using (var wr = new BinaryWriter(to)) {
+                while ((count = from.Read(buffer, 0, buffer.Length)) > 0) {
+                    wr.Write(buffer, 0, count);
+                    wr.Flush();
                 }
+                wr.Close();
             }
         }
     }
