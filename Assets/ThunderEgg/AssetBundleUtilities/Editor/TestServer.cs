@@ -7,35 +7,70 @@ using UnityEngine;
 
 namespace ThunderEgg.AssetBundleUtilities {
 
-    public class TestServer {
+    public class TestServer : IDisposable {
 
-        public class Control {
+        public class Control : IDisposable {
 
             TestServer TestServer;
 
-            public void Set(bool start) {
-                if (!start || TestServer != null) {
-                    if (TestServer != null) TestServer.Stop();
-                    TestServer = null;
-                }
+            ~Control() {
+                Dispose();
+            }
 
-                if (start) {
+            public void Dispose() {
+                Set(false);
+            }
+
+            public void Set(bool run) {
+                var has_server = TestServer != null;
+                if (run == has_server) return;
+                if (run) {
                     var set = Settings.Instance;
-                    var path = set.Output;
-                    TestServer = new TestServer(path, "*", set.TestServerPort);
+                    TestServer = new TestServer(set.Output, "*", set.TestServerPort);
                     TestServer.Start();
+                } else {
+                    using (var t = TestServer) {
+                        TestServer.Stop();
+                        TestServer = null;
+                    }
                 }
             }
         }
 
         public int MaxConnection = 20;
-        static int ResponseBufferSize = 64 * 1024;
+        int ResponseBufferSize = 64 * 1024;
 
         public string ContentsPath { get; private set; }
         public string ServerBaseUri { get; private set; }
 
-        HttpListener HttpListener;
+        volatile HttpListener HttpListener;
         int Connection_;
+
+        /// <summary>ディスポーズされているか</summary>
+        public bool IsDisposed { get; private set; }
+
+        /// <summary>ディスポーズされていたら例外を投げる</summary>
+        void ThrowIfDisposed() {
+            if (IsDisposed) {
+                throw new ObjectDisposedException(this.GetType().Name);
+            }
+        }
+
+        ~TestServer() {
+            Dispose(false);
+        }
+
+        public void Dispose() {
+            Dispose(true);
+        }
+
+        void Dispose(bool b) {
+            if (IsDisposed) {
+                return;
+            }
+            Stop();
+            IsDisposed = true;
+        }
 
         /// <summary>テストサーバー</summary>
         /// <param name="contents_path">公開コンテンツのパス</param>
@@ -57,12 +92,17 @@ namespace ThunderEgg.AssetBundleUtilities {
             ServerBaseUri = server_base_uri;
         }
 
+        public bool IsStart {
+            get {
+                ThrowIfDisposed();
+                return HttpListener != null;
+            }
+        }
+
         /// <summary>サービス開始</summary>
         public void Start() {
             //            Debug.Log(string.Format("TestServer Start {0} {1}", ContentsPath, ServerBaseUri));
-            if (HttpListener != null) {
-                Stop();
-            }
+            if (IsStart) Stop();
             Connection_ = 0;
             HttpListener = new HttpListener();
             HttpListener.Prefixes.Add(ServerBaseUri);
@@ -74,26 +114,30 @@ namespace ThunderEgg.AssetBundleUtilities {
 
         /// <summary>サービス停止</summary>
         public void Stop() {
-            if (HttpListener == null) return;
+            if (!IsStart) return;
             //            Debug.Log("TestServer Stop");
             HttpListener.Stop();
-            while (Interlocked.Decrement(ref Connection_) >= 0) {
-                Interlocked.Increment(ref Connection_);
-                Thread.Sleep(1);
+            using (var listerner = HttpListener) {
+                // すべてが停止になるまで監視
+                HttpListener = null;
+                while (Interlocked.Decrement(ref Connection_) >= 0) {
+                    Interlocked.Increment(ref Connection_);
+                    Thread.Sleep(1);
+                }
             }
-            using (var t = HttpListener) { HttpListener = null; }
             Connection_ = 0;
         }
 
         /// <summary>非同期コールバック処理</summary>
-        public void CallBack(IAsyncResult result) {
-
-            Interlocked.Increment(ref Connection_);
-
+        void CallBack(IAsyncResult result) {
+            if (HttpListener == null) {
+                return;
+            }
             var listener = (HttpListener)result.AsyncState;
             HttpListenerResponse res = null;
 
             try {
+                Interlocked.Increment(ref Connection_);
                 // コンテクストの取得を試みる
                 var ctx = listener.EndGetContext(result);
                 var req = ctx.Request;
@@ -104,7 +148,7 @@ namespace ThunderEgg.AssetBundleUtilities {
                 if (string.Compare(req.HttpMethod, "GET", true) != 0) {
                     res.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
                     res.Close();
-                    res = null;
+                    return;
                 }
 
                 // ファイル確認
@@ -112,22 +156,29 @@ namespace ThunderEgg.AssetBundleUtilities {
                     // ファイルが見つからなかった
                     res.StatusCode = (int)HttpStatusCode.NotFound;
                     res.Close();
-                    res = null;
+                    return;
                 }
 
                 // ファイル送信を試みる
                 res.StatusCode = (int)HttpStatusCode.OK;
-                Responser(res, path);
+                if (!Responser(res, path)) {
+                    res.OutputStream.Dispose();
+                    res.Abort();
+                    listener = null;
+                    return;
+                }
                 res.Close();
-                res = null;
             }
             catch (Exception e) {
-                // 停止要求例外なら続けないようにする
-                if (e is HttpListenerException || e is ThreadAbortException ||
+                // 停止要求例外系なら続けないようにする
+                if (e is HttpListenerException || //
+                    e is ThreadAbortException ||
                     e is ObjectDisposedException) //
                 {
                     listener = null;
-                } else {
+                }
+                else {
+                    // その他の例外はレスポンスをアボートさせリスンを継続
                     if (res != null) {
                         res.Abort();
                     }
@@ -142,32 +193,35 @@ namespace ThunderEgg.AssetBundleUtilities {
         }
 
         /// <summary>レスポンス返却</summary>
-        void Responser(HttpListenerResponse res, string path) {
+        bool Responser(HttpListenerResponse res, string path) {
             using (var from = File.OpenRead(path)) {
                 var fname = Path.GetFileName(path);
                 res.ContentLength64 = from.Length;
                 res.SendChunked = false;
                 res.ContentType = MediaTypeNames.Application.Octet;
+                res.KeepAlive = true;
                 res.AddHeader("Content-disposition", "attachment; filename=" + fname);
-                CopyTo(from, res.OutputStream);
-                // from.CopyTo(res.OutputStream);
-                from.Close();
+                return CopyTo(from, res.OutputStream);
             }
         }
 
         /// <summary>ストリームのコピー</summary>
-        static void CopyTo(Stream from, Stream to) {
+        bool CopyTo(Stream from, Stream to) {
             var buffer = new byte[ResponseBufferSize];
             var total = 0;
             int count;
             using (var wr = new BinaryWriter(to)) {
                 while ((count = from.Read(buffer, 0, buffer.Length)) > 0) {
+                    if (HttpListener == null) {
+                        return false;
+                    }
                     wr.Write(buffer, 0, count);
                     wr.Flush();
                     total += count;
                 }
                 wr.Close();
             }
+            return true;
         }
     }
 }
