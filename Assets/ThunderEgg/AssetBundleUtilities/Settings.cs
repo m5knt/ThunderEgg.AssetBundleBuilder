@@ -2,12 +2,14 @@
 using UnityEngine;
 using System.Linq;
 
-namespace ThunderEgg.AssetBundleUtilities  {
+namespace ThunderEgg.UnityUtilities.AssetBundleUtilities {
 
+    /// <summary>AssetBundleUtilities向け設定の型</summary>
     public sealed class Settings : ScriptableObject {
 
         /// <summary>アセットバンドルの自動命名規則</summary>
-        public string NameRule = @"/AB/([^\..]+?)\.([^\..]+?)/";
+        //public string NameRule = @"/AB([^\..]+)@([^\..]+)?/";
+        public string NameRule = @"/(?'name'@[^\..]*?@)(?'variant'[^\..]+)?/";
 
         /// <summary>アセットバンドル出力位置</summary>
         public string Output = "AssetBundles";
@@ -35,16 +37,17 @@ namespace ThunderEgg.AssetBundleUtilities  {
         //
         //
 
+        /// <summary>インスタンスを返す</summary>
         public static Settings Instance {
             get { 
                 return Instance_ ?? (Instance_ =
-                    Utilities.CreateScriptableObject<Settings>(Base));
+                    UnityUtilities.CreateScriptableObject<Settings>(Path));
             }
         }
 
         static Settings Instance_;
 
-        static string Base = "Assets/ThunderEgg/AssetBundleUtilities/";
+        static string Path = "Assets/ThunderEgg/AssetBundleUtilities/AssetBundleUtilities.asset";
 
     }
 }

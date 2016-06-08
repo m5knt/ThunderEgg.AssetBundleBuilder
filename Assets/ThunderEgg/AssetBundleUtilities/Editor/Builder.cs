@@ -3,7 +3,7 @@ using UnityEngine;
 using System.IO;
 using System.Linq;
 
-namespace ThunderEgg.AssetBundleUtilities {
+namespace ThunderEgg.UnityUtilities.AssetBundleUtilities {
 
     public class Builder {
 
@@ -15,12 +15,12 @@ namespace ThunderEgg.AssetBundleUtilities {
 
             var target = EditorUserBuildSettings.activeBuildTarget;
             var roots = new[] {
-                Utilities.GetRoot(target),
-                Utilities.GetRoot(Application.platform),
+                AssetBundleUtilities.GetRoot(target),
+                AssetBundleUtilities.GetRoot(Application.platform),
                 }.Distinct();
 
             foreach (var root in roots) {
-                target = Utilities.RootToBuildTarget(roots.First());
+                target = AssetBundleUtilities.RootToBuildTarget(roots.First());
                 var output = set.Output + "/" + root;
                 if (!Directory.Exists(output)) {
                     Directory.CreateDirectory(output);

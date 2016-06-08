@@ -3,8 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace ThunderEgg.AssetBundleUtilities {
+namespace ThunderEgg.UnityUtilities.AssetBundleUtilities {
 
+    /// <summary>アセットバンドル名をパス名から自動命名します</summary>
     public class AutoNaming : AssetPostprocessor {
 
         //[PostProcessBuild(Int32.MaxValue)]
@@ -24,9 +25,9 @@ namespace ThunderEgg.AssetBundleUtilities {
             if (!File.Exists(asset_path)) return;
             var m = rule.Match(asset_path);
             if (m.Success) {
-                var bundle = m.Groups[1].Success ? m.Groups[1].Value : "";
-                var variant = m.Groups[2].Success ? m.Groups[2].Value : "";
-                SetBundleNameAndVariant(asset_path, bundle, variant);
+                var name = m.Groups["name"].Success ? m.Groups["name"].Value : "";
+                var variant = m.Groups["variant"].Success ? m.Groups["variant"].Value : "";
+                SetBundleNameAndVariant(asset_path, name, variant);
             }
             else {
                 SetBundleNameAndVariant(asset_path, "");
@@ -39,8 +40,8 @@ namespace ThunderEgg.AssetBundleUtilities {
         {
             var importer = AssetImporter.GetAtPath(asset_path);
             var b = true;
-            b = b && importer.assetBundleName == bundle;
-            b = b && importer.assetBundleVariant == variant;
+            b = b && (importer.assetBundleName == bundle);
+            b = b && (importer.assetBundleVariant == variant);
             if (b) return;
             importer.SetAssetBundleNameAndVariant(bundle, variant);
         }

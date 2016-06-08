@@ -6,19 +6,10 @@ using System;
 using System.IO;
 using System.Linq;
 
-namespace ThunderEgg.AssetBundleUtilities {
+namespace ThunderEgg.UnityUtilities.AssetBundleUtilities {
 
-    public class Utilities {
-
-        public static bool IsBatchMode {
-            get {
-                return (IsBatchMode_ ?? (IsBatchMode_ =
-                    Environment.GetCommandLineArgs()
-                    .Any(n => n.StartsWith("-batchmode")))).Value;
-            }
-        }
-
-        static bool? IsBatchMode_;
+    /// <summary>雑多なアセットバンドルのユーティリティ</summary>
+    public static class AssetBundleUtilities {
 
         /// <summary>現在のランタイムのアセットバンドルのルート名を取得する</summary>
         public static string Root {
@@ -67,22 +58,6 @@ namespace ThunderEgg.AssetBundleUtilities {
             new RP2R(RuntimePlatform.XboxOne, "XboxOne"),
             new RP2R(RuntimePlatform.WiiU, "WiiU"),
         };
-
-        public static T CreateScriptableObject<T>(string folder) //
-            where T : ScriptableObject //
-        {
-            var t = typeof(T);
-            var path = folder + t.Name + ".asset";
-            var o = AssetDatabase.LoadAssetAtPath<T>(path);
-            if (o == null) {
-                o = ScriptableObject.CreateInstance<T>();
-                if (!File.Exists(path)) {
-                    AssetDatabase.CreateAsset(o, path);
-                    AssetDatabase.SaveAssets();
-                }
-            }
-            return o;
-        }
 
 #if UNITY_EDITOR
 
