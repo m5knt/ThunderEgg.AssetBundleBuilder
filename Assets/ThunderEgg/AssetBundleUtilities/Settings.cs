@@ -47,7 +47,7 @@ namespace ThunderEgg.UnityUtilities.AssetBundleUtilities {
 
         static Settings Instance_;
 
-        static string Path = "Assets/ThunderEgg/AssetBundleUtilities/AssetBundleUtilities.asset";
+        static string Path = "Assets/ThunderEgg/Settings/AssetBundleUtilities.asset";
 
     }
 }
