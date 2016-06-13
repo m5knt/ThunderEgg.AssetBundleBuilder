@@ -29,12 +29,12 @@ namespace ThunderEgg.UnityUtilities {
 
 //        static ShellContextMenu scm = new ShellContextMenu();
 
-        [MenuItem("A/A")]
-        public static void Func() {
-            //var pos = new System.Drawing.Point(0, 0);
-            //var info = new[] { new FileInfo(@"c:\windows\notepad.exe") };
-            //scm.ShowContextMenu(info, pos);
-        }
+        //[MenuItem("A/A")]
+        //public static void Func() {
+        //    //var pos = new System.Drawing.Point(0, 0);
+        //    //var info = new[] { new FileInfo(@"c:\windows\notepad.exe") };
+        //    //scm.ShowContextMenu(info, pos);
+        //}
         ///    FileInfo[] files = new FileInfo[1];
         ///    files[0] = new FileInfo(@"c:\windows\notepad.exe");
         ///    scm.ShowContextMenu(this.Handle, files, Cursor.Position);

@@ -4,8 +4,8 @@ using UnityEditor;
 
 namespace ThunderEgg {
 
-    /// <summary>雑多なユーティリティーの入れ物</summary>
-    public static class Environment {
+    /// <summary>実行環境関係</summary>
+    public class Environment {
 
         /// <summary>環境変数を取得します</summary>
         /// <param name="key">変数名</param>
@@ -23,6 +23,11 @@ namespace ThunderEgg {
             if (prev == val) {
                 return prev;
             }
+            if (string.Compare(key, "PATH", true) == 0) {
+                if (ORIGINAL_PATH_ == null) {
+                    ORIGINAL_PATH_ = key;
+                }
+            }
             System.Environment.SetEnvironmentVariable(key, val);
             return prev;
         }
@@ -38,15 +43,20 @@ namespace ThunderEgg {
 
         /// <summary>環境変数 PATH</summary>
         public static string PATH {
-            get {
-                var path = Get("PATH");
-                ORIGINAL_PATH_ = ORIGINAL_PATH_ ?? path;
-                return path;
-            }
-            set {
-                ORIGINAL_PATH_ = ORIGINAL_PATH_ ?? Get("PATH");
-                Set("PATH", value);
-            }
+            get { return Get("PATH"); }
+            set { Set("PATH", value); }
+        }
+
+        /// <summary>環境変数 HTTP_PROXY</summary>
+        public static string HTTP_PROXY {
+            get { return Get("HTTP_PROXY"); }
+            set { Set("HTTP_PROXY", value); }
+        }
+
+        /// <summary>環境変数 HTTPS_PROXY</summary>
+        public static string HTTPS_PROXY {
+            get { return Get("HTTPS_PROXY"); }
+            set { Set("HTTPS_PROXY", value); }
         }
 
         /// <summary>環境変数 JDK_HOME</summary>

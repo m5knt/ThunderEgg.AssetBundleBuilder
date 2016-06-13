@@ -10,16 +10,17 @@ namespace ThunderEgg.UnityUtilities {
 
     /// <summary>雑多なユニティーのユーティリティー</summary>
     [InitializeOnLoad]
-    public static class UnityUtilities {
+    public class UnityUtilities {
 
         static UnityUtilities() {
             // エディタ実行では初回起動時に2回来ている
             if (int.TryParse(Environment.Get("UNITYINITILIZECOUNT") ?? "-1", //
-                out InitilizeCount_)) //
-            {
-                var val = (++InitilizeCount_).ToString();
-                Environment.Set("UNITYINITILIZECOUNT", val);
+                out InitilizeCount_)) {
+                InitilizeCount_ = -1;
             }
+            var val = (++InitilizeCount_).ToString();
+            Environment.Set("UNITYINITILIZECOUNT", val);
+            Debug.Log("Initilized Count " + val);
         }
 
         /// <summary>初期化カウント</summary>
@@ -28,6 +29,7 @@ namespace ThunderEgg.UnityUtilities {
             private set { InitilizeCount_ = value; }
 
         }
+
         static int InitilizeCount_ = 0;
 
         /// <summary>現在実行しているユニティーのパス</summary>

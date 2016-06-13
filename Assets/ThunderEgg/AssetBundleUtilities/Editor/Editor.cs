@@ -15,7 +15,7 @@ namespace ThunderEgg.UnityUtilities.AssetBundleUtilities {
             public bool UseServer;
         }
 
-        static TestServer.Control TestServerControl = new TestServer.Control();
+        static HttpServer.Control LocalServerControl = new HttpServer.Control();
 /////
         static Editor() {
             //var json = EditorPrefs.GetString(TestServerMenuString, "");
@@ -47,27 +47,28 @@ namespace ThunderEgg.UnityUtilities.AssetBundleUtilities {
             // EditorApplication.isPlaying;
         }
 
-        const string TestServerMenuString = "Assets/[ThunderEgg]/TestServer";
+        const string LocalServerMenuString = "Assets/[ThunderEgg]/LocalServer";
 
-        [MenuItem(TestServerMenuString, false, 100)]
-        static void TestServerMenu() {
-            var json = EditorPrefs.GetString(TestServerMenuString, "");
-            var set = JsonUtility.FromJson<Setting>(json);
-            set.UseServer = !set.UseServer;
-            json = JsonUtility.ToJson(set);
-            EditorPrefs.SetString(TestServerMenuString, json);
-            TestServerControl.Set(set.UseServer);
+        static bool server_ = false;
+        
+        [MenuItem(LocalServerMenuString, false, 100)]
+        static void LocalServerMenu() {
+            //var json = EditorPrefs.GetString(TestServerMenuString, "");
+            //var set = JsonUtility.FromJson<Setting>(json);
+            //set.UseServer = !set.UseServer;
+            //json = JsonUtility.ToJson(set);
+            //EditorPrefs.SetString(TestServerMenuString, json);
+            server_ = !server_;
+            Menu.SetChecked(LocalServerMenuString, server_);
+            LocalServerControl.Set(server_);
         }
 
-        [MenuItem(TestServerMenuString, true)]
-        static bool TestServerMenu_() {
-            var json = EditorPrefs.GetString(TestServerMenuString, "");
-            UnityEngine.Debug.Log(json);
-            var set = JsonUtility.FromJson<Setting>(json);
-            if (set == null) {
-                return false;
-            }//
-            Menu.SetChecked(TestServerMenuString, set.UseServer);
+        [MenuItem(LocalServerMenuString, true)]
+        static bool LocalServerMenu_() {
+            //var json = EditorPrefs.GetString(TestServerMenuString, "");
+            //UnityEngine.Debug.Log(json);
+            //var set = JsonUtility.FromJson<Setting>(json) ?? new Setting();
+            //Menu.SetChecked(TestServerMenuString, set.UseServer);
             return true;
         }
 

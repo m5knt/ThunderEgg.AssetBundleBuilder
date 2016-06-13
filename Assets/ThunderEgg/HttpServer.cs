@@ -8,43 +8,43 @@ using ThunderEgg.UnityUtilities.AssetBundleUtilities;
 
 namespace ThunderEgg.UnityUtilities {
 
-    public class TestServer : IDisposable {
+    // curl --connect-timeout 5 --speed-limit 0 --speed-time 5 
+
+    public class HttpServer : IDisposable {
 
         public class Control : IDisposable {
 
-            TestServer TestServer;
+            HttpServer HttpServer;
 
             ~Control() {
                 Dispose();
             }
 
             public void Dispose() {
-                if (TestServer == null) {
+                if (HttpServer == null) {
                     return;
                 }
-                using (var t = TestServer) {
-                    TestServer.Stop();
-                    TestServer = null;
+                using (var t = HttpServer) {
+                    HttpServer.Stop();
+                    HttpServer = null;
                 }
             }
 
             public void Set(bool order) {
-                var server_stat = TestServer != null;
+                var server_stat = HttpServer != null;
                 if (order == server_stat) return;
                 if (order) {
-                    var set = AssetBundleUtilities.Settings.Instance;
-                    TestServer = new TestServer(set.Output, "*", set.TestServerPort);
-                    TestServer.Start();
+                    var set = Settings.Instance;
+                    HttpServer = new HttpServer(set.Output, "*", set.TestServerPort);
+                    HttpServer.Start();
                 } else {
-                    using (var t = TestServer) {
-                        TestServer.Stop();
-                        TestServer = null;
-                    }
+                    HttpServer.Stop();
+                    HttpServer = null;
                 }
             }
         }
 
-        const int MaxConnection = 20;
+        const int MaxConnection = 1;
 
         const int ResponseBufferSize = 64 * 1024;
 
@@ -71,11 +71,11 @@ namespace ThunderEgg.UnityUtilities {
         /// <summary>ディスポーズされていたら例外を投げる</summary>
         void ThrowIfDisposed() {
             if (IsDisposed) {
-                throw new ObjectDisposedException(this.GetType().Name);
+                throw new ObjectDisposedException(GetType().Name);
             }
         }
 
-        ~TestServer() {
+        ~HttpServer() {
             Dispose();
         }
 
@@ -88,14 +88,14 @@ namespace ThunderEgg.UnityUtilities {
         /// <param name="contents_path">公開コンテンツのパス</param>
         /// <param name="server_name">サーバー名</param>
         /// <param name="port">ポート</param>
-        public TestServer(string contents_path, string server_name, int port) :
+        public HttpServer(string contents_path, string server_name, int port) :
             this(contents_path, string.Format("http://{0}:{1}/", server_name, port)) {
         }
 
         /// <summary>テストサーバー</summary>
         /// <param name="contents_path">公開コンテンツのパス</param>
         /// <param name="server_base_uri">公開サーバーのベースURI</param>
-        public TestServer(string contents_path, string server_base_uri) {
+        public HttpServer(string contents_path, string server_base_uri) {
             contents_path = contents_path.Replace('\\', '/');
             if (contents_path.EndsWith("/")) {
                 contents_path = contents_path.Substring(0, contents_path.Length - 1);
@@ -114,7 +114,6 @@ namespace ThunderEgg.UnityUtilities {
         /// <summary>サービス開始</summary>
         public void Start() {
             if (IsStart) Stop();
-            //            Debug.Log(string.Format("TestServer Start {0} {1}", ContentsPath, ServerBaseUri));
             ConnectionCount_ = 0;
             HttpListener = new HttpListener();
             HttpListener.Prefixes.Add(ServerBaseUri);
@@ -127,25 +126,25 @@ namespace ThunderEgg.UnityUtilities {
         /// <summary>サービス停止</summary>
         public void Stop() {//
             if (!IsStart) return;
-            //            Debug.Log("TestServer Stop");
             HttpListener.Stop();
-            HttpListener.Close();
-            // HttpListener.Abort();
             using (var listerner = HttpListener) {
-                // すべてが停止になるまで監視
                 HttpListener = null;
+                listerner.Close();
+                listerner.Abort();
+                // すべてが停止になるまで監視
+                while (Interlocked.Add(ref ConnectionCount_, 0) > 0) {
+                    Thread.Sleep(1);
+                }
             }
-            ConnectionCount_ = 0;
         }
 
         /// <summary>非同期コールバック処理</summary>
         void CallBack(IAsyncResult result) {
 
-            if (HttpListener == null) {
+            var listener = (HttpListener)result.AsyncState;
+            if (listener != HttpListener) {
                 return;
             }
-
-            var listener = (HttpListener)result.AsyncState;
             HttpListenerResponse res = null;
 
             try {
@@ -173,7 +172,7 @@ namespace ThunderEgg.UnityUtilities {
 
                 // ファイル送信を試みる
                 res.StatusCode = (int)HttpStatusCode.OK;
-                if (!Responser(res, path)) {
+                if (!Responser(listener, res, path)) {
                     // 終了要求が来ているのでアボート
                     var t = res;
                     res = null;
@@ -210,7 +209,7 @@ namespace ThunderEgg.UnityUtilities {
         }
 
         /// <summary>レスポンス返却</summary>
-        bool Responser(HttpListenerResponse res, string path) {
+        bool Responser(HttpListener listener, HttpListenerResponse res, string path) {
             using (var from = File.OpenRead(path)) {
                 var fname = Path.GetFileName(path);
                 res.ContentLength64 = from.Length;
@@ -218,18 +217,18 @@ namespace ThunderEgg.UnityUtilities {
                 res.ContentType = MediaTypeNames.Application.Octet;
                 res.KeepAlive = true;
                 res.AddHeader("Content-disposition", "attachment; filename=" + fname);
-                return CopyTo(from, res.OutputStream);
+                return CopyTo(listener, from, res.OutputStream);
             }
         }
 
         /// <summary>ストリームのコピー</summary>
-        bool CopyTo(Stream from, Stream to) {
+        bool CopyTo(HttpListener listener, Stream from, Stream to) {
             var buffer = new byte[ResponseBufferSize];
             var total = 0;
             int count;
             using (var wr = new BinaryWriter(to)) {
                 while ((count = from.Read(buffer, 0, buffer.Length)) > 0) {
-                    if (HttpListener == null) {
+                    if (listener != HttpListener) {
                         return false;
                     }
                     wr.Write(buffer, 0, count);
